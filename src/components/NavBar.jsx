@@ -76,7 +76,7 @@ const NavBar = () => {
       }      
 
   return (
-    <NavWrapper>
+    <NavWrapper show={show}>
       <Logo>
         <Image
           alt="Poke logo"
