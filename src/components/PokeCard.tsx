@@ -2,9 +2,18 @@ import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import LazyImage from './LazyImage';
 import { Link } from 'react-router-dom';
+import { PokemonNameAndUrl } from '../types/PokemonData';
+import { PokemonDetail } from '../types/PokemonDetail';
 
-const PokeCard = ({url, name}) => {
-    const [pokemon, setPokemons] = useState();
+interface PokeData {
+    id: number;
+    type: string;
+    name: string;
+}
+
+
+const PokeCard = ({url, name}: PokemonNameAndUrl) => {
+    const [pokemon, setPokemons] = useState<PokeData>();
 
     useEffect(() => {
         fetchPokeDetailData();
@@ -20,7 +29,7 @@ const PokeCard = ({url, name}) => {
         }
     }
 
-    function formatPokemonData(data) {
+    function formatPokemonData(data: PokemonDetail) {
         return {
             id: data.id
             , name: data.name

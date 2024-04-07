@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
+import { User, getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
 import app from '../firebase';
+import storage from '../utils/storage';
 
-const initialUserData = localStorage.getItem('userData') 
-    ? JSON.parse(localStorage.getItem('userData')) 
-    : {};
+const initialUserData = storage.get<User>('userData');
 
 const NavBar = () => {
     const auth = getAuth(app)
@@ -14,7 +13,7 @@ const NavBar = () => {
 
     const [show, setShow] = useState(false);
 
-    const [userData, setUserData] = useState(initialUserData);
+    const [userData, setUserData] = useState<User | null>(initialUserData);
 
     const { pathname } = useLocation();
 
@@ -39,8 +38,8 @@ const NavBar = () => {
           .then(result => {
             // console.log(result);
             setUserData(result.user);
-            // storage.set("userData", result.user);
-            localStorage.setItem("userData", JSON.stringify(result.user));
+            storage.set("userData", result.user);
+            // localStorage.setItem("userData", JSON.stringify(result.user));
           })
           .catch(error => {
             console.error(error);
@@ -66,8 +65,8 @@ const NavBar = () => {
       const handleLogout = () => {
         signOut(auth)
           .then(() => {
-            localStorage.removeItem('userData');
-            // storage.remove('userData');
+            // localStorage.removeItem('userData');
+            storage.remove('userData');
             setUserData(null);
           })
           .catch(error => {
@@ -177,7 +176,7 @@ const Logo = styled.a`
   margin-top: 4px;
 `
 
-const NavWrapper = styled.nav`
+const NavWrapper = styled.nav<{show: boolean}>`
   position: fixed;
   top: 0;
   left: 0;

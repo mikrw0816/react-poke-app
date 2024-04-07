@@ -10,14 +10,23 @@ import { Vector } from '../../assets/Vector';
 import Type from '../../components/Type';
 import BaseStat from '../../components/BaseStat';
 import DamageModal from '../../components/DamageModal';
+import { FormattedPokemonData } from '../../types/FormattedPokemonData';
+import { Ability, PokemonDetail, Sprites, Stat } from '../../types/PokemonDetail';
+import { DamageRelationOfPokemonType } from '../../types/DamageRelationOfPokemonTypes';
+import { FlavorTextEntry, PokemonDescription } from '../../types/PokemonDescription';
+
+interface NextAndPreviousPokemon {
+    next: string | undefined;
+    previous: string | undefined;
+}
 
 const DetailPage = () => {
-    const [pokemon, setPokemon] = useState();
-    const [isLoading, setIsLoading] = useState(false);
+    const [pokemon, setPokemon] = useState<FormattedPokemonData>();
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-    const params = useParams();
+    const params = useParams() as {id: string};
     const pokemonId = params.id;
     const baseUrl = `https://pokeapi.co/api/v2/pokemon/`;
 
@@ -26,24 +35,24 @@ const DetailPage = () => {
         fetchPokemonData(pokemonId);
     }, [pokemonId]);
 
-    async function fetchPokemonData(id) {
+    async function fetchPokemonData(id: string) {
         const url = `${baseUrl}${id}`;
         try {
-            const {data: pokemonData} = await axios.get(url);
+            const {data: pokemonData} = await axios.get<PokemonDetail>(url);
             // console.log(pokemonData);
 
             if(pokemonData) {
-                const {name, id, types, weight, height, stats, abilities, sprites, description} = pokemonData;
-                const nextAndPreviousPokemon = await getNextAndPreviousPokemon(id);
+                const {name, id, types, weight, height, stats, abilities, sprites} = pokemonData;
+                const nextAndPreviousPokemon: NextAndPreviousPokemon = await getNextAndPreviousPokemon(id);
 
                 const DamageRelations = await Promise.all(
                     types.map(async (i) => {
-                        const type = await axios.get(i.type.url);
+                        const type = await axios.get<DamageRelationOfPokemonType>(i.type.url);
                         return type.data.damage_relations
                     })
                 )
 
-                const formattedPokemonData = {
+                const formattedPokemonData: FormattedPokemonData = {
                     id,
                     name,
                     weight: weight / 10,
@@ -67,7 +76,7 @@ const DetailPage = () => {
         }
     }
 
-    const filterAndFormatDescription = (flavorText) => {
+    const filterAndFormatDescription = (flavorText: FlavorTextEntry[]): string[] => {
         const koreanDescriptions = flavorText
             ?.filter((text) => text.language.name === "ko")
             .map((text) => text.flavor_text.replace(/\r|\n|\f/g, ' '))
@@ -75,27 +84,26 @@ const DetailPage = () => {
     }
 
 
-    const getPokemonDescription = async (id) => {
+    const getPokemonDescription = async (id: number): Promise<string> => {
         const url = `https://pokeapi.co/api/v2/pokemon-species/${id}/`
 
-        const { data: pokemonSpecies } = await axios.get(url)
+        const { data: pokemonSpecies } = await axios.get<PokemonDescription>(url)
 
         const descriptions = filterAndFormatDescription(pokemonSpecies.flavor_text_entries)
         return descriptions[Math.floor(Math.random() * descriptions.length)]
     }    
 
-    const formatPokemonSprites = (sprites) => {
+    const formatPokemonSprites = (sprites: Sprites) => {
         const newSprites = { ...sprites };
 
-        (Object.keys(newSprites)).forEach(key => {
+        (Object.keys(newSprites) as (keyof typeof newSprites)[]).forEach(key => {
             if (typeof newSprites[key] !== 'string') {
                 delete newSprites[key];
             }
         });
 
-        return Object.values(newSprites);
-
-    }    
+        return Object.values(newSprites) as string[];
+    }
 
     const formatPokemonStats = ([
         statHP,
@@ -104,7 +112,7 @@ const DetailPage = () => {
         statSATK,
         statSDEP,
         statSPD
-    ]) => [
+    ]: Stat[]) => [
             { name: 'Hit Points', baseStat: statHP.base_stat },
             { name: 'Attack', baseStat: statATK.base_stat },
             { name: 'Defense', baseStat: statDEP.base_stat },
@@ -113,12 +121,12 @@ const DetailPage = () => {
             { name: 'Speed', baseStat: statSPD.base_stat }
         ]
     
-    const formatPokemonAbilities = (abilities) => {
+    const formatPokemonAbilities = (abilities: Ability[]) => {
         return abilities.filter((_, index) => index <= 1)
-                        .map((obj) => obj.ability.name.replaceAll('-', ''))
+            .map((obj: Ability) => obj.ability.name.replaceAll('-', ' '))
     }
 
-    async function getNextAndPreviousPokemon(id) {
+    async function getNextAndPreviousPokemon(id: number) {
         const urlPokemon = `${baseUrl}?limit=1&offset=${id - 1}`;
 
         const { data: pokemonData } = await axios.get(urlPokemon);
